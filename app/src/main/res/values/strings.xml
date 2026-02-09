@@ -2,13 +2,13 @@
 
 <!DOCTYPE resources [
     <!ENTITY TERMUX_PACKAGE_NAME "app.botdrop">
-    <!ENTITY TERMUX_APP_NAME "BotDrop">
-    <!ENTITY TERMUX_API_APP_NAME "BotDrop:API">
-    <!ENTITY TERMUX_BOOT_APP_NAME "BotDrop:Boot">
-    <!ENTITY TERMUX_FLOAT_APP_NAME "BotDrop:Float">
-    <!ENTITY TERMUX_STYLING_APP_NAME "BotDrop:Styling">
-    <!ENTITY TERMUX_TASKER_APP_NAME "BotDrop:Tasker">
-    <!ENTITY TERMUX_WIDGET_APP_NAME "BotDrop:Widget">
+    <!ENTITY TERMUX_APP_NAME "Nana">
+    <!ENTITY TERMUX_API_APP_NAME "Nana:API">
+    <!ENTITY TERMUX_BOOT_APP_NAME "Nana:Boot">
+    <!ENTITY TERMUX_FLOAT_APP_NAME "Nana:Float">
+    <!ENTITY TERMUX_STYLING_APP_NAME "Nana:Styling">
+    <!ENTITY TERMUX_TASKER_APP_NAME "Nana:Tasker">
+    <!ENTITY TERMUX_WIDGET_APP_NAME "Nana:Widget">
     ]>
 
 <resources>

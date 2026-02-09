@@ -93,7 +93,7 @@ public class BotDropService extends Service {
      */
     public void executeCommand(String command, CommandCallback callback) {
         mExecutor.execute(() -> {
-            CommandResult result = executeCommandSync(command);
+            CommandResult result = executeCommandSync(command, 60);
             mHandler.post(() -> callback.onResult(result));
         });
     }
@@ -101,7 +101,7 @@ public class BotDropService extends Service {
     /**
      * Execute a shell command synchronously
      */
-    private CommandResult executeCommandSync(String command) {
+    private CommandResult executeCommandSync(String command, int timeoutSeconds) {
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
         int exitCode = -1;
@@ -145,12 +145,12 @@ public class BotDropService extends Service {
             }
 
             // Wait with timeout to prevent hanging indefinitely
-            boolean finished = process.waitFor(60, TimeUnit.SECONDS);
+            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
-                Logger.logError(LOG_TAG, "Command timeout after 60 seconds");
+                Logger.logError(LOG_TAG, "Command timeout after " + timeoutSeconds + " seconds");
                 return new CommandResult(false, stdout.toString(),
-                    "Command timeout after 60 seconds", -1);
+                    "Command timeout after " + timeoutSeconds + " seconds", -1);
             }
 
             exitCode = process.exitValue();
@@ -168,6 +168,23 @@ public class BotDropService extends Service {
         } finally {
             if (tmpScript != null) tmpScript.delete();
         }
+    }
+
+    /**
+     * Execute a command with a custom timeout (seconds).
+     * Use this for long-running agent turns.
+     */
+    public void executeCommandWithTimeout(String command, int timeoutSeconds, CommandCallback callback) {
+        mExecutor.execute(() -> {
+            CommandResult result = executeCommandSync(command, timeoutSeconds);
+            mHandler.post(() -> callback.onResult(result));
+        });
+    }
+
+    private static String shQuote(String s) {
+        if (s == null) return "''";
+        // POSIX-safe single-quote escaping: ' -> '"'"'
+        return "'" + s.replace("'", "'\"'\"'") + "'";
     }
 
     /**
@@ -361,6 +378,24 @@ public class BotDropService extends Service {
                "export PATH=$PREFIX/bin:$PATH && " +
                "export TMPDIR=$PREFIX/tmp && " +
                "$PREFIX/bin/termux-chroot openclaw " + openclawArgs;
+    }
+
+    /**
+     * Run a single agent turn and return JSON on stdout.
+     * This supports "in-app chat UI" without requiring Telegram/Discord setup.
+     */
+    public void runAgentTurn(String sessionId, String message, CommandCallback callback) {
+        // openclaw will attempt gateway; if gateway is down it may fallback to embedded agent.
+        String args =
+            "agent " +
+            "--session-id " + shQuote(sessionId) + " " +
+            "--message " + shQuote(message) + " " +
+            "--json " +
+            "--timeout 180 " +
+            "--channel last";
+
+        String cmd = withTermuxChroot(args);
+        executeCommandWithTimeout(cmd, 240, callback);
     }
 
     private static final String GATEWAY_PID_FILE = TermuxConstants.TERMUX_HOME_DIR_PATH + "/.openclaw/gateway.pid";

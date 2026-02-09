@@ -25,6 +25,31 @@ public class BotDropConfig {
     
     // Lock for thread-safe file operations
     private static final Object CONFIG_LOCK = new Object();
+
+    /**
+     * Set an env var in openclaw.json (config-level env injection).
+     * This is the safest way to avoid storing raw provider keys in auth-profiles.json for preinstalled devices.
+     */
+    public static boolean setEnvVar(String key, String value) {
+        try {
+            JSONObject config = readConfig();
+
+            JSONObject env;
+            if (config.has("env") && config.get("env") instanceof JSONObject) {
+                env = config.getJSONObject("env");
+            } else {
+                env = new JSONObject();
+            }
+
+            env.put(key, value);
+            config.put("env", env);
+            return writeConfig(config);
+
+        } catch (JSONException e) {
+            Logger.logError(LOG_TAG, "Failed to set env var: " + e.getMessage());
+            return false;
+        }
+    }
     
     /**
      * Read the current configuration
@@ -136,6 +161,10 @@ public class BotDropConfig {
             JSONObject gateway = config.getJSONObject("gateway");
             if (!gateway.has("mode")) {
                 gateway.put("mode", "local");
+            }
+            // Default to loopback-only for safety (factory devices should not expose LAN services by default).
+            if (!gateway.has("bind")) {
+                gateway.put("bind", "loopback");
             }
             // Gateway requires auth token
             if (!gateway.has("auth")) {
