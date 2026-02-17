@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Build;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -53,6 +54,8 @@ public class DashboardActivity extends Activity {
     private Button mRestartButton;
     private View mSshCard;
     private TextView mSshInfoText;
+    private View mUpdateBanner;
+    private TextView mUpdateBannerText;
 
     private BotDropService mBotDropService;
     private boolean mBound = false;
@@ -110,6 +113,10 @@ public class DashboardActivity extends Activity {
         mSshCard = findViewById(R.id.ssh_card);
         mSshInfoText = findViewById(R.id.ssh_info_text);
 
+        // Update banner
+        mUpdateBanner = findViewById(R.id.update_banner);
+        mUpdateBannerText = findViewById(R.id.update_banner_text);
+
         // Load channel info
         loadChannelInfo();
 
@@ -119,6 +126,15 @@ public class DashboardActivity extends Activity {
         // Bind to service
         Intent intent = new Intent(this, BotDropService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
+        // Check for app updates (also picks up results from launcher check)
+        UpdateChecker.check(this, (latestVersion, downloadUrl, notes) -> showUpdateBanner(latestVersion, downloadUrl));
+
+        // Also check stored result in case launcher already fetched it
+        String[] stored = UpdateChecker.getAvailableUpdate(this);
+        if (stored != null) {
+            showUpdateBanner(stored[0], stored[1]);
+        }
     }
 
     @Override
@@ -240,6 +256,21 @@ public class DashboardActivity extends Activity {
             button.setAlpha(0.5f);
             button.setTextColor(ContextCompat.getColor(this, R.color.botdrop_secondary_text));
         }
+    }
+
+    private void showUpdateBanner(String latestVersion, String downloadUrl) {
+        mUpdateBannerText.setText("Update available: v" + latestVersion);
+        mUpdateBanner.setVisibility(View.VISIBLE);
+
+        findViewById(R.id.btn_update_download).setOnClickListener(v -> {
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
+            startActivity(browserIntent);
+        });
+
+        findViewById(R.id.btn_update_dismiss).setOnClickListener(v -> {
+            mUpdateBanner.setVisibility(View.GONE);
+            UpdateChecker.dismiss(this, latestVersion);
+        });
     }
 
     /**

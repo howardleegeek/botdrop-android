@@ -31,9 +31,7 @@ import org.json.JSONObject;
  *
  * Phase 2 (Loading): Routes to the appropriate screen based on installation state:
  * 1. If bootstrap not extracted -> Wait for TermuxInstaller
- * 2. If OpenClaw not installed -> SetupActivity (auto-install)
- * 3. If OpenClaw not configured -> SetupActivity (auth + channel setup)
- * 4. All ready -> DashboardActivity
+ * 2. Route to PreinstallActivity (auto-install + auto-provision + start gateway)
  */
 public class BotDropLauncherActivity extends Activity {
 
@@ -67,6 +65,9 @@ public class BotDropLauncherActivity extends Activity {
         mContinueButton = findViewById(R.id.btn_continue);
         mNotificationStatus = findViewById(R.id.notification_status);
         mBatteryStatus = findViewById(R.id.battery_status);
+
+        // Trigger update check early (results stored for Dashboard to display)
+        UpdateChecker.check(this, null);
 
         mNotificationButton.setOnClickListener(v -> openNotificationSettings());
         mBatteryButton.setOnClickListener(v -> requestBatteryOptimization());
@@ -206,11 +207,11 @@ public class BotDropLauncherActivity extends Activity {
             mNotificationStatus.setText("✓");
             mNotificationStatus.setVisibility(View.VISIBLE);
             mNotificationButton.setEnabled(false);
-            mNotificationButton.setText("Enabled");
+            mNotificationButton.setText("已开启");
         } else {
             mNotificationStatus.setVisibility(View.GONE);
             mNotificationButton.setEnabled(true);
-            mNotificationButton.setText("Allow");
+            mNotificationButton.setText("允许");
         }
 
         // Battery status
@@ -218,11 +219,11 @@ public class BotDropLauncherActivity extends Activity {
             mBatteryStatus.setText("✓");
             mBatteryStatus.setVisibility(View.VISIBLE);
             mBatteryButton.setEnabled(false);
-            mBatteryButton.setText("Granted");
+            mBatteryButton.setText("已允许");
         } else {
             mBatteryStatus.setVisibility(View.GONE);
             mBatteryButton.setEnabled(true);
-            mBatteryButton.setText("Allow");
+            mBatteryButton.setText("允许");
         }
 
         // Enable continue when both handled
@@ -235,68 +236,18 @@ public class BotDropLauncherActivity extends Activity {
         // Check 1: Bootstrap installed?
         if (!BotDropService.isBootstrapInstalled()) {
             Logger.logInfo(LOG_TAG, "Bootstrap not ready, waiting for TermuxInstaller");
-            mStatusText.setText("Setting up environment...");
+            mStatusText.setText("正在准备环境…");
 
             TermuxInstaller.setupBootstrapIfNeeded(this, this::checkAndRoute);
             return;
         }
 
-        // Check 2: OpenClaw configured (API key)?
-        if (!BotDropService.isOpenclawConfigured()) {
-            Logger.logInfo(LOG_TAG, "OpenClaw not configured, routing to auth setup");
-            mStatusText.setText("Setup required...");
+        // Always route to preinstall flow (idempotent).
+        Logger.logInfo(LOG_TAG, "Bootstrap ready, routing to PreinstallActivity");
+        mStatusText.setText("正在启动…");
 
-            Intent intent = new Intent(this, SetupActivity.class);
-            intent.putExtra(SetupActivity.EXTRA_START_STEP, SetupActivity.STEP_API_KEY);
-            startActivity(intent);
-            finish();
-            return;
-        }
-
-        // Check 3: OpenClaw installed?
-        if (!BotDropService.isOpenclawInstalled()) {
-            Logger.logInfo(LOG_TAG, "OpenClaw not installed, routing to agent selection");
-            mStatusText.setText("Preparing installation...");
-
-            Intent intent = new Intent(this, SetupActivity.class);
-            intent.putExtra(SetupActivity.EXTRA_START_STEP, SetupActivity.STEP_AGENT_SELECT);
-            startActivity(intent);
-            finish();
-            return;
-        }
-
-        // Check 4: Channel configured?
-        if (!hasChannelConfigured()) {
-            Logger.logInfo(LOG_TAG, "No channel configured, routing to channel setup");
-            mStatusText.setText("Channel setup required...");
-
-            Intent intent = new Intent(this, SetupActivity.class);
-            intent.putExtra(SetupActivity.EXTRA_START_STEP, SetupActivity.STEP_CHANNEL);
-            startActivity(intent);
-            finish();
-            return;
-        }
-
-        // All ready - go to DashboardActivity
-        Logger.logInfo(LOG_TAG, "All ready, routing to dashboard");
-        mStatusText.setText("Starting...");
-
-        Intent intent = new Intent(this, DashboardActivity.class);
+        Intent intent = new Intent(this, PreinstallActivity.class);
         startActivity(intent);
         finish();
-    }
-
-    private boolean hasChannelConfigured() {
-        try {
-            JSONObject config = BotDropConfig.readConfig();
-            if (config.has("channels")) {
-                JSONObject channels = config.getJSONObject("channels");
-                return channels.has("telegram") || channels.has("discord");
-            }
-            return false;
-        } catch (Exception e) {
-            Logger.logError(LOG_TAG, "Failed to check channel config: " + e.getMessage());
-            return false;
-        }
     }
 }

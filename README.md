@@ -1,5 +1,8 @@
 # BotDrop
 
+Monorepo: our Nana preinstall + in-app voice chat work is vendored into
+[howardleegeek/openclaw-mobile](https://github.com/howardleegeek/openclaw-mobile) under `android/botdrop-android/`.
+
 Run AI agents on your Android phone — no terminal, no CLI, just a guided setup.
 
 BotDrop wraps [OpenClaw](https://github.com/nicepkg/openclaw) into a user-friendly Android app. Install, configure, and manage your AI agent in 4 simple steps.

@@ -27,6 +27,7 @@ android {
         implementation "androidx.core:core:1.13.1"
         implementation "androidx.drawerlayout:drawerlayout:1.2.0"
         implementation "androidx.preference:preference:1.2.1"
+        implementation "androidx.recyclerview:recyclerview:1.3.2"
         implementation "androidx.viewpager:viewpager:1.0.0"
         implementation "androidx.viewpager2:viewpager2:1.0.0"
         implementation "com.google.android.material:material:1.12.0"
@@ -42,26 +43,25 @@ android {
     }
 
     defaultConfig {
-        // applicationId defaults to namespace "com.termux" for bootstrap compatibility
-        // TODO: Change to "app.botdrop" after bootstrap rebuild with new prefix
+        applicationId "app.botdrop"
         minSdkVersion project.properties.minSdkVersion.toInteger()
         targetSdkVersion project.properties.targetSdkVersion.toInteger()
-        versionCode 1
-        versionName "0.1.0"
+        versionCode 4
+        versionName "0.2.2"
 
         if (appVersionName) versionName = appVersionName
         validateVersionName(versionName)
 
         buildConfigField "String", "TERMUX_PACKAGE_VARIANT", "\"" + project.ext.packageVariant + "\"" // Used by TermuxApplication class
 
-        manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux" // TODO: Change to "app.botdrop" after bootstrap rebuild
-        manifestPlaceholders.TERMUX_APP_NAME = "BotDrop"
-        manifestPlaceholders.TERMUX_API_APP_NAME = "BotDrop:API"
-        manifestPlaceholders.TERMUX_BOOT_APP_NAME = "BotDrop:Boot"
-        manifestPlaceholders.TERMUX_FLOAT_APP_NAME = "BotDrop:Float"
-        manifestPlaceholders.TERMUX_STYLING_APP_NAME = "BotDrop:Styling"
-        manifestPlaceholders.TERMUX_TASKER_APP_NAME = "BotDrop:Tasker"
-        manifestPlaceholders.TERMUX_WIDGET_APP_NAME = "BotDrop:Widget"
+        manifestPlaceholders.TERMUX_PACKAGE_NAME = "app.botdrop"
+        manifestPlaceholders.TERMUX_APP_NAME = "Nana"
+        manifestPlaceholders.TERMUX_API_APP_NAME = "Nana:API"
+        manifestPlaceholders.TERMUX_BOOT_APP_NAME = "Nana:Boot"
+        manifestPlaceholders.TERMUX_FLOAT_APP_NAME = "Nana:Float"
+        manifestPlaceholders.TERMUX_STYLING_APP_NAME = "Nana:Styling"
+        manifestPlaceholders.TERMUX_TASKER_APP_NAME = "Nana:Tasker"
+        manifestPlaceholders.TERMUX_WIDGET_APP_NAME = "Nana:Widget"
 
         ndk {
             abiFilters 'arm64-v8a'
@@ -181,7 +181,7 @@ def downloadBootstrap(String arch) {
         return
     }
 
-    def remoteUrl = "https://github.com/louzhixian/botdrop-packages/releases/latest/download/bootstrap-" + arch + ".zip"
+    def remoteUrl = "https://github.com/zhixianio/botdrop-packages/releases/latest/download/bootstrap-" + arch + ".zip"
     logger.quiet("Downloading " + remoteUrl + " ...")
 
     file.parentFile.mkdirs()
